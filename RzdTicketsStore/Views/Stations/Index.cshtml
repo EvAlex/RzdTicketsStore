@@ -1,0 +1,24 @@
+﻿@model List<RzdTicketsStore.Models.Station>
+
+@{
+    ViewBag.Title = "Станции";
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Название</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var station in Model)
+        {
+            <tr>
+                <td>@station.Id</td>
+                <td>@station.Name</td>
+            </tr>
+        }
+    </tbody>    
+</table>
+
