@@ -10,7 +10,7 @@ namespace RzdTicketsStore.Controllers
     {
         public ActionResult Index()
         {
-            return View();
+            return RedirectToAction("Index", "Trips");
         }
 
         public ActionResult About()

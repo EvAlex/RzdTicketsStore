@@ -4,21 +4,43 @@
     ViewBag.Title = "Станции";
 }
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Id</th>
-            <th>Название</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var station in Model)
-        {
-            <tr>
-                <td>@station.Id</td>
-                <td>@station.Name</td>
-            </tr>
-        }
-    </tbody>    
-</table>
+<div class="container">
+
+    <div class="row">
+        <div class="col-md-12">
+            <a href="@Url.Action("Create")" class="btn btn-success">Создать</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>Название</th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var station in Model)
+                    {
+                        <tr>
+                            <td>@station.Id</td>
+                            <td>@station.Name</td>
+                            <td>
+                                <a href="@Url.Action("Edit", new { id = station.Id })" class="btn btn-default btn-sm">Редактировать</a>
+                            </td>
+                            <td>
+                                <a href="@Url.Action("Delete", new { id = station.Id })" class="btn btn-default btn-sm">Удалить</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
 

@@ -9,18 +9,16 @@ namespace RzdTicketsStore.Models
     {
         public int Id { get; set; }
 
-        public Station DepartureStation { get; set; }
-
-        public DateTime DepartureTime { get; set; }
-
-        public Station ArrivalStation { get; set; }
-
-        public DateTime ArrivalTime { get; set; }
+        public TrainTrip Trip { get; set; }
 
         public double Cost { get; set; }
 
         public DateTime? BookingTime { get; set; }
 
         public Customer Customer { get; set; }
+
+        public int WagonNumber { get; set; }
+
+        public int SeatNumber { get; set; }
     }
 }

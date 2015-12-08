@@ -39,6 +39,36 @@ namespace RzdTicketsStore.Models
             }
         }
 
+        internal Station GetStation(int id)
+        {
+            using (var connection = new SqlConnection(GetConnectionString()))
+            {
+                connection.Open();
+
+                return GetStation(id, connection);
+            }
+        }
+
+        private Station GetStation(int id, SqlConnection connection)
+        {
+            Station res = null;
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "SELECT Id, Name FROM Stations WHERE Id = Id";
+                command.Parameters.AddWithValue("@id", id);
+
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        res = ReadStation(reader);
+                    }
+                }
+            }
+
+            return res;
+        }
+
         private bool CheckDbExists(string dbname, SqlConnection connection)
         {
             using (var command = connection.CreateCommand())
@@ -48,6 +78,45 @@ namespace RzdTicketsStore.Models
                 int result = (int)command.ExecuteScalar();
 
                 return result == 1;
+            }
+        }
+
+        internal void DeleteStation(int id)
+        {
+            using (var connection = new SqlConnection(GetConnectionString()))
+            {
+                connection.Open();
+                DeleteStation(id, connection);
+            }
+        }
+
+        private void DeleteStation(int id, SqlConnection connection)
+        {
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "DELETE FROM Stations WHERE Id = @id";
+                command.Parameters.AddWithValue("@id", id);
+                command.ExecuteNonQuery();
+            }
+        }
+
+        internal void UpdateStation(Station station)
+        {
+            using (var connection = new SqlConnection(GetConnectionString()))
+            {
+                connection.Open();
+                UpdateStation(station, connection);
+            }
+        }
+
+        private void UpdateStation(Station station, SqlConnection connection)
+        {
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "UPDATE Stations SET Name = @name WHERE Id = @id";
+                command.Parameters.AddWithValue("@id", station.Id);
+                command.Parameters.AddWithValue("@name", station.Name);
+                command.ExecuteNonQuery();
             }
         }
 
@@ -69,13 +138,18 @@ namespace RzdTicketsStore.Models
                         PassportNumber NVARCHAR(10),
                         BirthDate DATETIME
                     );
-                        
-                    CREATE TABLE Tickets (
+
+                    CREATE TABLE TrainTrips (
                         Id INT IDENTITY(1, 1) PRIMARY KEY,
                         DepartureStationId INT NOT NULL FOREIGN KEY REFERENCES Stations(Id),
                         DepartureTime DATETIME NOT NULL,
                         ArrivalStationId INT NOT NULL FOREIGN KEY REFERENCES Stations(Id),
                         ArrivalTime DATETIME NOT NULL,
+                    );
+                        
+                    CREATE TABLE Tickets (
+                        Id INT IDENTITY(1, 1) PRIMARY KEY,
+                        TripId INT NOT NULL FOREIGN KEY REFERENCES TrainTrips(Id),
                         Cost FLOAT,
                         BookingTime DATETIME DEFAULT NULL,
                         PassangerId INT FOREIGN KEY REFERENCES Customers(Id)
@@ -113,6 +187,15 @@ namespace RzdTicketsStore.Models
         private string GetMasterDbConnectionString()
         {
             return WebConfigurationManager.ConnectionStrings["MasterDbConnection"].ConnectionString;
+        }
+
+        public void InsertStation(Station station)
+        {
+            using (var connection = new SqlConnection(GetConnectionString()))
+            {
+                connection.Open();
+                InsertStation(station, connection);
+            }
         }
 
         public void InsertStation(Station station, SqlConnection connection)
@@ -154,14 +237,19 @@ namespace RzdTicketsStore.Models
                 {
                     while (reader.Read())
                     {
-                        var station = new Station();
-                        station.Id = reader.GetInt32(0);
-                        station.Name = reader.GetString(1);
-                        res.Add(station);
+                        res.Add(ReadStation(reader));
                     }
                 }
             }
             return res;
+        }
+
+        private Station ReadStation(SqlDataReader reader)
+        {
+            var station = new Station();
+            station.Id = reader.GetInt32(0);
+            station.Name = reader.GetString(1);
+            return station;
         }
     }
 }
