@@ -1,0 +1,40 @@
+﻿@model List<RzdTicketsStore.Models.Station>
+
+@{
+    ViewBag.Title = "Create";
+}
+
+<h2>Введите данные рейса</h2>
+
+<form action="@Url.Action("Create")" method="post" class="form-horizontal">
+    <div class="form-group">
+        <label for="inputDeparture" class="col-sm-2 control-label">Станция отправления</label>
+        <div class="col-sm-10">
+            @Html.DropDownList("DepartureStation.Id", Model.Select(s => new SelectListItem { Value = s.Id.ToString(), Text = s.Name }), new { @class = "form-control", id = "inputDeparture" })
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="inputArrival" class="col-sm-2 control-label">Станция назначения</label>
+        <div class="col-sm-10">
+            @Html.DropDownList("ArrivalStation.Id", Model.Select(s => new SelectListItem { Value = s.Id.ToString(), Text = s.Name }), new { @class = "form-control", id = "inputArrival" })
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="inputDepartureTime" class="col-sm-2 control-label">Время отправления</label>
+        <div class="col-sm-10">
+            <input type="datetime" name="DepartureTime" class="form-control" />
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="inputArrivalTime" class="col-sm-2 control-label">Время прибытия</label>
+        <div class="col-sm-10">
+            <input type="datetime" name="ArrivalTime" class="form-control" />
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="col-sm-offset-2 col-sm-10">
+            <button type="submit" class="btn btn-default">Создать</button>
+        </div>
+    </div>
+</form>
+

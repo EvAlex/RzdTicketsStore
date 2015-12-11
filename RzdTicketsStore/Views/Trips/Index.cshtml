@@ -1,7 +1,54 @@
-﻿
+﻿@model List<RzdTicketsStore.Models.TrainTrip>
+
 @{
     ViewBag.Title = "Рейсы";
 }
 
 <h2>Рейсы</h2>
+
+<div class="container">
+
+    <div class="row">
+        <div class="col-md-12">
+            <a href="@Url.Action("Create")" class="btn btn-success">Создать</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>Станция отправления</th>
+                        <th>Станция назначения</th>
+                        <th>Время отправления</th>
+                        <th>Время прибытия</th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var trip in Model)
+                    {
+                        <tr>
+                            <td>@trip.Id</td>
+                            <td>@trip.DepartureStation.Name</td>
+                            <td>@trip.ArrivalStation.Name</td>
+                            <td>@trip.DepartureTime.ToString("HH:mm dd.MM.yyyy")</td>
+                            <td>@trip.ArrivalTime.ToString("HH:mm dd.MM.yyyy")</td>
+                            <td>
+                                <a href="@Url.Action("Edit", new { id = trip.Id })" class="btn btn-default btn-sm">Редактировать</a>
+                            </td>
+                            <td>
+                                <a href="@Url.Action("Delete", new { id = trip.Id })" class="btn btn-default btn-sm">Удалить</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+        </table>
+        </div>
+    </div>
+
+</div>
 

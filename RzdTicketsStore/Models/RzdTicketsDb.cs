@@ -9,6 +9,8 @@ namespace RzdTicketsStore.Models
 {
     public class RzdTicketsDb
     {
+        #region Initialize
+
         public void Initialize()
         {
             CreateDatabaseIfNotExists();
@@ -17,10 +19,8 @@ namespace RzdTicketsStore.Models
 
         private void CreateDatabaseIfNotExists()
         {
-            using (var connection = new SqlConnection(GetMasterDbConnectionString()))
+            using (var connection = OpenMasterDbConnection())
             {
-                connection.Open();
-
                 if (!CheckDbExists(GetDbName(), connection))
                 {
                     CreateDatabase(connection);
@@ -39,36 +39,6 @@ namespace RzdTicketsStore.Models
             }
         }
 
-        internal Station GetStation(int id)
-        {
-            using (var connection = new SqlConnection(GetConnectionString()))
-            {
-                connection.Open();
-
-                return GetStation(id, connection);
-            }
-        }
-
-        private Station GetStation(int id, SqlConnection connection)
-        {
-            Station res = null;
-            using (var command = connection.CreateCommand())
-            {
-                command.CommandText = "SELECT Id, Name FROM Stations WHERE Id = Id";
-                command.Parameters.AddWithValue("@id", id);
-
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        res = ReadStation(reader);
-                    }
-                }
-            }
-
-            return res;
-        }
-
         private bool CheckDbExists(string dbname, SqlConnection connection)
         {
             using (var command = connection.CreateCommand())
@@ -78,45 +48,6 @@ namespace RzdTicketsStore.Models
                 int result = (int)command.ExecuteScalar();
 
                 return result == 1;
-            }
-        }
-
-        internal void DeleteStation(int id)
-        {
-            using (var connection = new SqlConnection(GetConnectionString()))
-            {
-                connection.Open();
-                DeleteStation(id, connection);
-            }
-        }
-
-        private void DeleteStation(int id, SqlConnection connection)
-        {
-            using (var command = connection.CreateCommand())
-            {
-                command.CommandText = "DELETE FROM Stations WHERE Id = @id";
-                command.Parameters.AddWithValue("@id", id);
-                command.ExecuteNonQuery();
-            }
-        }
-
-        internal void UpdateStation(Station station)
-        {
-            using (var connection = new SqlConnection(GetConnectionString()))
-            {
-                connection.Open();
-                UpdateStation(station, connection);
-            }
-        }
-
-        private void UpdateStation(Station station, SqlConnection connection)
-        {
-            using (var command = connection.CreateCommand())
-            {
-                command.CommandText = "UPDATE Stations SET Name = @name WHERE Id = @id";
-                command.Parameters.AddWithValue("@id", station.Id);
-                command.Parameters.AddWithValue("@name", station.Name);
-                command.ExecuteNonQuery();
             }
         }
 
@@ -160,10 +91,8 @@ namespace RzdTicketsStore.Models
 
         private void SeedDefaultData()
         {
-            using (var connection = new SqlConnection(GetConnectionString()))
+            using (var connection = OpenDbConnection())
             {
-                connection.Open();
-
                 if (GetStationsCount(connection) == 0)
                 {
                     InsertStation(new Station { Name = "Москва Ленинградская" }, connection);
@@ -174,26 +103,79 @@ namespace RzdTicketsStore.Models
             }
         }
 
-        private string GetConnectionString()
+        #endregion
+
+        #region Stations
+
+        internal Station GetStation(int id)
         {
-            return WebConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
+            using (var connection = OpenDbConnection())
+            {
+                return GetStation(id, connection);
+            }
         }
 
-        private string GetDbName()
+        private Station GetStation(int id, SqlConnection connection)
         {
-            return new SqlConnection(GetConnectionString()).Database;
+            Station res = null;
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "SELECT Id, Name FROM Stations WHERE Id = Id";
+                command.Parameters.AddWithValue("@id", id);
+
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        res = ReadStation(reader);
+                    }
+                }
+            }
+
+            return res;
         }
 
-        private string GetMasterDbConnectionString()
+        internal void DeleteStation(int id)
         {
-            return WebConfigurationManager.ConnectionStrings["MasterDbConnection"].ConnectionString;
+            using (var connection = OpenDbConnection())
+            {
+                DeleteStation(id, connection);
+            }
+        }
+
+        private void DeleteStation(int id, SqlConnection connection)
+        {
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "DELETE FROM Stations WHERE Id = @id";
+                command.Parameters.AddWithValue("@id", id);
+                command.ExecuteNonQuery();
+            }
+        }
+
+        internal void UpdateStation(Station station)
+        {
+            using (var connection = OpenDbConnection())
+            {
+                UpdateStation(station, connection);
+            }
+        }
+
+        private void UpdateStation(Station station, SqlConnection connection)
+        {
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "UPDATE Stations SET Name = @name WHERE Id = @id";
+                command.Parameters.AddWithValue("@id", station.Id);
+                command.Parameters.AddWithValue("@name", station.Name);
+                command.ExecuteNonQuery();
+            }
         }
 
         public void InsertStation(Station station)
         {
-            using (var connection = new SqlConnection(GetConnectionString()))
+            using (var connection = OpenDbConnection())
             {
-                connection.Open();
                 InsertStation(station, connection);
             }
         }
@@ -219,9 +201,8 @@ namespace RzdTicketsStore.Models
 
         public List<Station> GetStations()
         {
-            using (var connection = new SqlConnection(GetConnectionString()))
+            using (var connection = OpenDbConnection())
             {
-                connection.Open();
                 return GetStations(connection);
             }
         }
@@ -251,5 +232,116 @@ namespace RzdTicketsStore.Models
             station.Name = reader.GetString(1);
             return station;
         }
+
+        #endregion
+
+        #region Trips
+
+        public List<TrainTrip> GetTrips()
+        {
+            var res = new List<TrainTrip>();
+
+            using (var connection = OpenDbConnection())
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = @"
+                    SELECT 
+                        t.Id            as Id, 
+                        t.DepartureTime as DepartureTime, 
+                        t.ArrivalTime   as ArrivalTime,
+                        sd.Id           as DepartureStationId,
+                        sd.Name         as DepartureStationName,
+                        sa.Id           as ArrivalStationId,
+                        sa.Name         as ArrivalStationName
+                    FROM TrainTrips t
+                    JOIN Stations sd ON sd.Id = t.DepartureStationId
+                    JOIN Stations sa ON sa.Id = t.ArrivalStationId";
+
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        res.Add(ReadTrip(reader));
+                    }
+                }
+            }
+
+            return res;
+        }
+
+        internal void InsertTrip(TrainTrip trip)
+        {
+            using (var connection = OpenDbConnection())
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = @"
+                    INSERT INTO TrainTrips(
+                        DepartureStationId, 
+                        DepartureTime, 
+                        ArrivalStationId, 
+                        ArrivalTime) 
+                    OUTPUT INSERTED.Id 
+                    VALUES(@did, @dt, @aid, @at)";
+
+                command.Parameters.AddWithValue("@did", trip.DepartureStation.Id);
+                command.Parameters.AddWithValue("@dt", trip.DepartureTime);
+                command.Parameters.AddWithValue("@aid", trip.ArrivalStation.Id);
+                command.Parameters.AddWithValue("@at", trip.ArrivalTime);
+
+                trip.Id = (int)command.ExecuteScalar();
+            }
+        }
+
+        private TrainTrip ReadTrip(SqlDataReader reader)
+        {
+            var trip = new TrainTrip();
+
+            trip.Id = (int)reader["Id"];
+            trip.DepartureTime = (DateTime)reader["DepartureTime"];
+            trip.ArrivalTime = (DateTime)reader["ArrivalTime"];
+            trip.DepartureStation = new Station();
+            trip.DepartureStation.Id = (int)reader["DepartureStationId"];
+            trip.DepartureStation.Name = (string)reader["DepartureStationName"];
+            trip.ArrivalStation = new Station();
+            trip.ArrivalStation.Id = (int)reader["ArrivalStationId"];
+            trip.ArrivalStation.Name = (string)reader["ArrivalStationName"];
+
+            return trip;
+        }
+
+        #endregion
+
+        #region Utils
+
+        private SqlConnection OpenDbConnection()
+        {
+            var connection = new SqlConnection(GetConnectionString());
+            connection.Open();
+            return connection;
+        }
+
+        private SqlConnection OpenMasterDbConnection()
+        {
+            var connection = new SqlConnection(GetMasterDbConnectionString());
+            connection.Open();
+            return connection;
+        }
+
+        private string GetConnectionString()
+        {
+            return WebConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
+        }
+
+        private string GetDbName()
+        {
+            return new SqlConnection(GetConnectionString()).Database;
+        }
+
+        private string GetMasterDbConnectionString()
+        {
+            return WebConfigurationManager.ConnectionStrings["MasterDbConnection"].ConnectionString;
+        }
+
+        #endregion
     }
 }
