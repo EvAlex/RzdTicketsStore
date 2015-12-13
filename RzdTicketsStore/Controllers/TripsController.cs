@@ -34,5 +34,32 @@ namespace RzdTicketsStore.Controllers
             db.InsertTrip(trip);
             return RedirectToAction("Index");
         }
+
+        // GET: Trips/Edit
+        [HttpGet]
+        public ActionResult Edit(int id)
+        {
+            var db = new RzdTicketsDb();
+            var trip = db.GetTrip(id);
+            return View(trip);
+        }
+
+        // POST: Trips/Edit
+        [HttpPost]
+        public ActionResult Edit(TrainTrip trip)
+        {
+            var db = new RzdTicketsDb();
+            db.UpdateTrip(trip);
+            return RedirectToAction("Index");
+        }
+
+        // POST: Trips/Delete
+        [HttpGet]
+        public ActionResult Delete(int id)
+        {
+            var db = new RzdTicketsDb();
+            db.DeleteTrip(id);
+            return RedirectToAction("Index");
+        }
     }
 }

@@ -248,6 +248,7 @@
     <Content Include="Views\Stations\Create.cshtml" />
     <Content Include="Views\Stations\Edit.cshtml" />
     <Content Include="Views\Trips\Create.cshtml" />
+    <Content Include="Views\Trips\Edit.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

@@ -135,22 +135,9 @@ namespace RzdTicketsStore.Models
             return res;
         }
 
-        internal void DeleteStation(int id)
+        public void DeleteStation(int id)
         {
-            using (var connection = OpenDbConnection())
-            {
-                DeleteStation(id, connection);
-            }
-        }
-
-        private void DeleteStation(int id, SqlConnection connection)
-        {
-            using (var command = connection.CreateCommand())
-            {
-                command.CommandText = "DELETE FROM Stations WHERE Id = @id";
-                command.Parameters.AddWithValue("@id", id);
-                command.ExecuteNonQuery();
-            }
+            DeleteEntry(id, "Stations");
         }
 
         internal void UpdateStation(Station station)
@@ -269,6 +256,65 @@ namespace RzdTicketsStore.Models
             return res;
         }
 
+        internal TrainTrip GetTrip(int id)
+        {
+            TrainTrip res = null;
+
+            using (var connection = OpenDbConnection())
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = @"
+                    SELECT 
+                        t.Id            as Id, 
+                        t.DepartureTime as DepartureTime, 
+                        t.ArrivalTime   as ArrivalTime,
+                        sd.Id           as DepartureStationId,
+                        sd.Name         as DepartureStationName,
+                        sa.Id           as ArrivalStationId,
+                        sa.Name         as ArrivalStationName
+                    FROM TrainTrips t
+                    JOIN Stations sd ON sd.Id = t.DepartureStationId
+                    JOIN Stations sa ON sa.Id = t.ArrivalStationId
+                    WHERE t.Id = @id";
+
+                command.Parameters.AddWithValue("@id", id);
+
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        res = ReadTrip(reader);
+                    }
+                }
+            }
+
+            return res;
+        }
+
+        internal void UpdateTrip(TrainTrip trip)
+        {
+            using (var connection = OpenDbConnection())
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = @"
+                    UPDATE TrainTrips
+                    SET 
+                        DepartureStationId = @did, 
+                        DepartureTime = @dt, 
+                        ArrivalStationId = @aid, 
+                        ArrivalTime = @at) 
+                    WHERE Id = @id";
+
+                command.Parameters.AddWithValue("@id", trip.Id);
+                command.Parameters.AddWithValue("@did", trip.DepartureStation.Id);
+                command.Parameters.AddWithValue("@dt", trip.DepartureTime);
+                command.Parameters.AddWithValue("@aid", trip.ArrivalStation.Id);
+                command.Parameters.AddWithValue("@at", trip.ArrivalTime);
+
+                command.ExecuteNonQuery();
+            }
+        }
+
         internal void InsertTrip(TrainTrip trip)
         {
             using (var connection = OpenDbConnection())
@@ -292,6 +338,11 @@ namespace RzdTicketsStore.Models
             }
         }
 
+        internal void DeleteTrip(int id)
+        {
+            DeleteEntry(id, "TrainTrips");
+        }
+
         private TrainTrip ReadTrip(SqlDataReader reader)
         {
             var trip = new TrainTrip();
@@ -309,9 +360,36 @@ namespace RzdTicketsStore.Models
             return trip;
         }
 
+        private string GetSelectAllTripsSql()
+        {
+            return @"
+                SELECT 
+                    t.Id            as Id, 
+                    t.DepartureTime as DepartureTime, 
+                    t.ArrivalTime   as ArrivalTime,
+                    sd.Id           as DepartureStationId,
+                    sd.Name         as DepartureStationName,
+                    sa.Id           as ArrivalStationId,
+                    sa.Name         as ArrivalStationName
+                FROM TrainTrips t
+                JOIN Stations sd ON sd.Id = t.DepartureStationId
+                JOIN Stations sa ON sa.Id = t.ArrivalStationId";
+        }
+
         #endregion
 
-        #region Utils
+        #region Common
+        
+        private void DeleteEntry(int id, string tableName)
+        {
+            using (var connection = OpenDbConnection())
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "DELETE FROM " + tableName + " WHERE Id = @id";
+                command.Parameters.AddWithValue("@id", id);
+                command.ExecuteNonQuery();
+            }
+        }
 
         private SqlConnection OpenDbConnection()
         {
