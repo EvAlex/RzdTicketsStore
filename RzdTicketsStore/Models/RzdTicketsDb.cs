@@ -352,7 +352,7 @@ namespace RzdTicketsStore.Models
             }
         }
 
-        internal void InsertTrip(TrainTrip trip)
+        public void InsertTrip(TrainTrip trip)
         {
             using (var connection = OpenDbConnection())
             using (var command = connection.CreateCommand())
@@ -455,7 +455,7 @@ namespace RzdTicketsStore.Models
             return res.ToArray();
         }
 
-        private void InsertTickets(int tripId, int wagonsCount, int seatsCountPerWagon, double cost)
+        public void InsertTickets(int tripId, int wagonsCount, int seatsCountPerWagon, double cost)
         {
             using (var connection = OpenDbConnection())
             using (var command = connection.CreateCommand())

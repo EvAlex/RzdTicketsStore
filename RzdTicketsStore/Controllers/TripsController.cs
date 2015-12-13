@@ -43,6 +43,7 @@ namespace RzdTicketsStore.Controllers
         {
             var db = new RzdTicketsDb();
             db.InsertTrip(trip);
+            db.InsertTickets(trip.Id, 16, 37, 3487);
             return RedirectToAction("Index");
         }
 
