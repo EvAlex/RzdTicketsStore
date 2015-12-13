@@ -32,11 +32,29 @@
                     @foreach (var trip in Model)
                     {
                         <tr>
-                            <td>@trip.Id</td>
-                            <td>@trip.DepartureStation.Name</td>
-                            <td>@trip.ArrivalStation.Name</td>
-                            <td>@trip.DepartureTime.ToString("HH:mm dd.MM.yyyy")</td>
-                            <td>@trip.ArrivalTime.ToString("HH:mm dd.MM.yyyy")</td>
+                            <td>
+                                @trip.Id
+                            </td>
+                            <td>
+                                <a href="@Url.Action(trip.Id.ToString())">
+                                    @trip.DepartureStation.Name
+                                </a>
+                            </td>
+                            <td>
+                                <a href="@Url.Action(trip.Id.ToString())">
+                                    @trip.ArrivalStation.Name
+                                </a>
+                            </td>
+                            <td>
+                                <a href="@Url.Action(trip.Id.ToString())">
+                                    @trip.DepartureTime.ToString("HH:mm dd.MM.yyyy")
+                                </a>
+                            </td>
+                            <td>
+                                <a href="@Url.Action(trip.Id.ToString())">
+                                    @trip.ArrivalTime.ToString("HH:mm dd.MM.yyyy")
+                                </a>
+                            </td>
                             <td>
                                 <a href="@Url.Action("Edit", new { id = trip.Id })" class="btn btn-default btn-sm">Редактировать</a>
                             </td>

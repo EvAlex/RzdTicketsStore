@@ -1,0 +1,45 @@
+﻿@model RzdTicketsStore.Models.TripDetailsViewModel
+
+@{
+    ViewBag.Title = "Details";
+}
+
+<h2>Билеты на поезд @Model.Trip.DepartureStation.Name - @Model.Trip.ArrivalStation.Name</h2>
+
+<h3>Время отправления: @Model.Trip.DepartureTime.ToString("HH:mm dd.MM.yyyy")</h3>
+<h3>Время прибытия: @Model.Trip.ArrivalTime.ToString("HH:mm dd.MM.yyyy")</h3>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Вагон</th>
+                        <th>Место</th>
+                        <th>Стоимость</th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in Model.Tickets)
+                    {
+                        <tr>
+                            <td>@t.WagonNumber</td>
+                            <td>@t.SeatNumber</td>
+                            <td>@t.Cost</td>
+                            <td>
+
+                            </td>
+                            <td>
+
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+

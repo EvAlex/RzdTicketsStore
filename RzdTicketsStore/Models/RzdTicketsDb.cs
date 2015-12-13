@@ -82,8 +82,10 @@ namespace RzdTicketsStore.Models
                         Id INT IDENTITY(1, 1) PRIMARY KEY,
                         TripId INT NOT NULL FOREIGN KEY REFERENCES TrainTrips(Id),
                         Cost FLOAT,
+                        WagonNumber INT NOT NULL,
+                        SeatNumber INT NOT NULL,
                         BookingTime DATETIME DEFAULT NULL,
-                        PassangerId INT FOREIGN KEY REFERENCES Customers(Id)
+                        CustomerId INT FOREIGN KEY REFERENCES Customers(Id)
                     );";
                 command.ExecuteNonQuery();
             }
@@ -95,10 +97,45 @@ namespace RzdTicketsStore.Models
             {
                 if (GetStationsCount(connection) == 0)
                 {
-                    InsertStation(new Station { Name = "Москва Ленинградская" }, connection);
-                    InsertStation(new Station { Name = "Москва Казанская" }, connection);
-                    InsertStation(new Station { Name = "Москва Павелецкая" }, connection);
-                    InsertStation(new Station { Name = "Санкт-Петербург Ладож." }, connection);
+                    var stations = new Station[]
+                        {
+                            new Station { Name = "Москва Ленинградская" },
+                            new Station { Name = "Москва Казанская" },
+                            new Station { Name = "Москва Павелецкая" },
+                            new Station { Name = "Санкт-Петербург Ладож." },
+                            new Station { Name = "Казань" },
+                            new Station { Name = "Воронеж" },
+                            new Station { Name = "Нижний Новгород" },
+                            new Station { Name = "Адлер" },
+                        };
+                    foreach (var s in stations)
+                    {
+                        InsertStation(s);
+                    }
+
+                    var trips = new TrainTrip[]
+                        {
+                            new TrainTrip
+                            {
+                                DepartureStation = stations[3],
+                                ArrivalStation = stations[0],
+                                DepartureTime = new DateTime(2015, 12, 10, 0, 11, 0),
+                                ArrivalTime = new DateTime(2015, 12, 10, 0, 11, 0)
+                            },
+                            new TrainTrip
+                            {
+                                DepartureStation = stations[4],
+                                ArrivalStation = stations[1],
+                                DepartureTime = new DateTime(2015, 12, 14, 19, 45, 0),
+                                ArrivalTime = new DateTime(2015, 12, 15, 7, 10, 0)
+                            }
+                        };
+
+                    foreach (var t in trips)
+                    {
+                        InsertTrip(t);
+                        InsertTickets(t.Id, wagonsCount: 16, seatsCountPerWagon: 37, cost: 4554);
+                    }
                 }
             }
         }
@@ -378,8 +415,104 @@ namespace RzdTicketsStore.Models
 
         #endregion
 
+        #region Tickets
+
+        public Ticket[] GetTickets(TrainTrip trip)
+        {
+            var res = new List<Ticket>();
+
+            using (var connection = OpenDbConnection())
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = @"
+                    SELECT
+	                    t.Id          AS TicketId,
+	                    t.TripId      AS TicketTripId,
+	                    t.Cost        AS TicketCost,
+	                    t.BookingTime AS TicketBookingTime,
+	                    t.SeatNumber  AS TicketSeatNumber,
+	                    t.WagonNumber AS TicketWagonNumber,
+	                    c.Id          AS CustomerId,
+	                    c.Surname     AS CustomerSurname,
+	                    c.Name        AS CustomerName,
+	                    c.Fathersname AS CustomerFathersname,
+	                    c.BirthDate   AS CustomerBirthdate
+                    FROM Tickets t
+                    LEFT JOIN Customers c ON c.Id = t.CustomerId 
+                    WHERE t.TripId = @id";
+
+                command.Parameters.AddWithValue("@id", trip.Id);
+
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        res.Add(ReadTicket(reader, trip));
+                    }
+                }
+            }
+
+            return res.ToArray();
+        }
+
+        private void InsertTickets(int tripId, int wagonsCount, int seatsCountPerWagon, double cost)
+        {
+            using (var connection = OpenDbConnection())
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "INSERT INTO Tickets (TripId, Cost, WagonNumber, SeatNumber) VALUES ";
+
+                var values = new List<string>();
+                for (int w = 0; w < wagonsCount; w++)
+                {
+                    for (int s = 0; s < seatsCountPerWagon; s++)
+                    {
+                        values.Add(string.Format("({0}, {1}, {2}, {3})", tripId, cost, w + 1, s + 1));
+                    }
+                }
+                command.CommandText += string.Join(", ", values);
+
+                command.ExecuteNonQuery();
+            }
+        }
+
+        private Ticket ReadTicket(SqlDataReader reader, TrainTrip trip)
+        {
+            var res = new Ticket();
+            res.Id = (int)reader["TicketId"];
+            res.Trip = trip;
+            res.Cost = (double)reader["TicketCost"];
+            res.BookingTime = reader["TicketBookingTime"] == DBNull.Value ? null : (DateTime?)reader["TicketBookingTime"];
+            res.SeatNumber = (int)reader["TicketSeatNumber"];
+            res.WagonNumber = (int)reader["TicketWagonNumber"];
+            res.Passenger = ReadCustomer(reader);
+            return res;
+        }
+
+        #endregion
+
+        #region Customers
+
+        private Customer ReadCustomer(SqlDataReader reader)
+        {
+            if (reader["CustomerId"] == DBNull.Value)
+                return null;
+
+            Customer res = new Customer();
+
+            res.Id = (int)reader["CustomerId"];
+            res.Surname = (string)reader["CustomerSurname"];
+            res.Name = (string)reader["CustomerName"];
+            res.Fathersname = (string)reader["CustomerFathersname"];
+            res.BirthDate = (DateTime)reader["CustomerBirthdate"];
+
+            return res;
+        }
+
+        #endregion
+
         #region Common
-        
+
         private void DeleteEntry(int id, string tableName)
         {
             using (var connection = OpenDbConnection())

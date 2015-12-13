@@ -15,7 +15,7 @@ namespace RzdTicketsStore.Models
 
         public DateTime? BookingTime { get; set; }
 
-        public Customer Customer { get; set; }
+        public Customer Passenger { get; set; }
 
         public int WagonNumber { get; set; }
 

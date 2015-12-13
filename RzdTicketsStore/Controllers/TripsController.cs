@@ -17,6 +17,17 @@ namespace RzdTicketsStore.Controllers
             return View(trips);
         }
 
+        //  GET: Trips/5
+        [Route("Trips/{tripId}")]
+        public ActionResult Details(int tripId)
+        {
+            var db = new RzdTicketsDb();
+            var trip = db.GetTrip(tripId);
+            var tickets = db.GetTickets(trip);
+            var model = new TripDetailsViewModel(trip, tickets);
+            return View(model);
+        }
+
         // GET: Trips/Create
         [HttpGet]
         public ActionResult Create()
