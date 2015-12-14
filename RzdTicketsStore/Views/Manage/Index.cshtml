@@ -7,6 +7,74 @@
 
 <p class="text-success">@ViewBag.StatusMessage</p>
 <div>
+    <br />
+    <br />
+    <br />
+    <h4>Купленные и забронированные билеты</h4>
+    <hr />
+    <div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Рейс</th>
+                    <th>Вагон - место</th>
+                    <th>Стоимость</th>
+                    <th>Статус</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var t in Model.Tickets)
+                {
+                    <tr>
+                        <td>@t.Trip.DepartureStation.Name - @t.Trip.ArrivalStation.Name</td>
+                        <td>@t.WagonNumber - @t.SeatNumber</td>
+                        <td>@t.Cost р.</td>
+                        <td>
+                            @if (t.BookingTime == null)
+                            {
+                                <span class="label label-success">Куплен</span>
+                            }
+                            else
+                            {
+                                <span class="label label-warning">Забронирован</span>
+                            }
+                        </td>
+                        <td>
+                            @if (t.BookingTime == null)
+                            {
+                                <a href="@Url.Action("ReturnTicket", "Tickets", new { ticketId = t.Id})">Отменить покупку</a>
+                            }
+                            else
+                            {
+                                <a href="@Url.Action("CancelBooking", "Tickets", new { ticketId = t.Id})">Отменить бронирование</a>
+                            }
+                        </td>
+                    </tr>
+                }
+                @if (Model.Tickets.Length == 0)
+                {
+                    <tr>
+                        <td colspan="5">
+                            <div class="alert alert-info" role="alert">
+                                У вас нет купленных или забронированных билетов.
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+
     <h4>Настройки аккаунта</h4>
     <hr />
     <dl class="dl-horizontal">

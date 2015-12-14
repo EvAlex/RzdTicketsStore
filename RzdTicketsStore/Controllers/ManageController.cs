@@ -64,13 +64,17 @@ namespace RzdTicketsStore.Controllers
                 : "";
 
             var userId = User.Identity.GetUserId();
+            var db = new RzdTicketsDb();
+            var customer = db.GetCustomer(userId);
+            var tickets = db.GetTickets(customer);
             var model = new IndexViewModel
             {
                 HasPassword = HasPassword(),
                 PhoneNumber = await UserManager.GetPhoneNumberAsync(userId),
                 TwoFactor = await UserManager.GetTwoFactorEnabledAsync(userId),
                 Logins = await UserManager.GetLoginsAsync(userId),
-                BrowserRemembered = await AuthenticationManager.TwoFactorBrowserRememberedAsync(userId)
+                BrowserRemembered = await AuthenticationManager.TwoFactorBrowserRememberedAsync(userId),
+                Tickets = tickets
             };
             return View(model);
         }

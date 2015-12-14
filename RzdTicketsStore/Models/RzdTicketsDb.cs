@@ -68,6 +68,7 @@ namespace RzdTicketsStore.Models
 
                     CREATE TABLE Customers (
                         Id INT IDENTITY(1, 1) PRIMARY KEY,
+                        UserId NVARCHAR(128) NOT NULL FOREIGN KEY REFERENCES AspNetUsers(Id),
                         Surname NVARCHAR(50),
                         Name NVARCHAR(50),
                         Fathersname NVARCHAR(50),
@@ -275,7 +276,7 @@ namespace RzdTicketsStore.Models
             {
                 command.CommandText = @"
                     SELECT 
-                        t.Id            as Id, 
+                        t.Id            as TripId, 
                         t.DepartureTime as DepartureTime, 
                         t.ArrivalTime   as ArrivalTime,
                         sd.Id           as DepartureStationId,
@@ -307,7 +308,7 @@ namespace RzdTicketsStore.Models
             {
                 command.CommandText = @"
                     SELECT 
-                        t.Id            as Id, 
+                        t.Id            as TripId, 
                         t.DepartureTime as DepartureTime, 
                         t.ArrivalTime   as ArrivalTime,
                         sd.Id           as DepartureStationId,
@@ -389,7 +390,7 @@ namespace RzdTicketsStore.Models
         {
             var trip = new TrainTrip();
 
-            trip.Id = (int)reader["Id"];
+            trip.Id = (int)reader["TripId"];
             trip.DepartureTime = (DateTime)reader["DepartureTime"];
             trip.ArrivalTime = (DateTime)reader["ArrivalTime"];
             trip.DepartureStation = new Station();
@@ -406,7 +407,7 @@ namespace RzdTicketsStore.Models
         {
             return @"
                 SELECT 
-                    t.Id            as Id, 
+                    t.Id            as TripId, 
                     t.DepartureTime as DepartureTime, 
                     t.ArrivalTime   as ArrivalTime,
                     sd.Id           as DepartureStationId,
@@ -438,6 +439,7 @@ namespace RzdTicketsStore.Models
 	                    t.SeatNumber  AS TicketSeatNumber,
 	                    t.WagonNumber AS TicketWagonNumber,
 	                    c.Id          AS CustomerId,
+	                    c.UserId      AS CustomerUserId,
 	                    c.Surname     AS CustomerSurname,
 	                    c.Name        AS CustomerName,
 	                    c.Fathersname AS CustomerFathersname,
@@ -452,6 +454,56 @@ namespace RzdTicketsStore.Models
                 {
                     while (reader.Read())
                     {
+                        res.Add(ReadTicket(reader, trip));
+                    }
+                }
+            }
+
+            return res.ToArray();
+        }
+
+        public Ticket[] GetTickets(Customer customer)
+        {
+            var res = new List<Ticket>();
+
+            using (var connection = OpenDbConnection())
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = @"
+                    SELECT
+	                    t.Id             AS TicketId,
+	                    t.TripId         AS TicketTripId,
+	                    t.Cost           AS TicketCost,
+	                    t.BookingTime    AS TicketBookingTime,
+	                    t.SeatNumber     AS TicketSeatNumber,
+	                    t.WagonNumber    AS TicketWagonNumber,
+	                    c.Id             AS CustomerId,
+	                    c.UserId         AS CustomerUserId,
+	                    c.Surname        AS CustomerSurname,
+	                    c.Name           AS CustomerName,
+	                    c.Fathersname    AS CustomerFathersname,
+	                    c.BirthDate      AS CustomerBirthdate,
+                        tt.Id            AS TripId, 
+                        tt.DepartureTime AS DepartureTime, 
+                        tt.ArrivalTime   AS ArrivalTime,
+                        sd.Id            AS DepartureStationId,
+                        sd.Name          AS DepartureStationName,
+                        sa.Id            AS ArrivalStationId,
+                        sa.Name          AS ArrivalStationName
+                    FROM Tickets t
+                    LEFT JOIN Customers c  ON c.Id  = t.CustomerId 
+                    JOIN TrainTrips     tt ON tt.Id = t.TripId
+                    JOIN Stations       sd ON sd.Id = tt.DepartureStationId
+                    JOIN Stations       sa ON sa.Id = tt.ArrivalStationId 
+                    WHERE t.CustomerId = @id";
+
+                command.Parameters.AddWithValue("@id", customer.Id);
+
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        var trip = ReadTrip(reader);
                         res.Add(ReadTicket(reader, trip));
                     }
                 }
@@ -481,6 +533,62 @@ namespace RzdTicketsStore.Models
             }
         }
 
+        public void BookTicket(int ticketId, int customerId)
+        {
+            using (var connection = OpenDbConnection())
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "UPDATE Tickets SET BookingTime = @t, CustomerId = @cid WHERE Id = @id";
+
+                command.Parameters.AddWithValue("@t", DateTime.Now);
+                command.Parameters.AddWithValue("@cid", customerId);
+                command.Parameters.AddWithValue("@id", ticketId);
+
+                command.ExecuteNonQuery();
+            }
+        }
+
+        public void CancelBooking(int ticketId)
+        {
+            using (var connection = OpenDbConnection())
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "UPDATE Tickets SET BookingTime = NULL, CustomerId = NULL WHERE Id = @id";
+
+                command.Parameters.AddWithValue("@id", ticketId);
+
+                command.ExecuteNonQuery();
+            }
+        }
+
+        public void BuyTicket(int ticketId, int customerId)
+        {
+            using (var connection = OpenDbConnection())
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "UPDATE Tickets SET BookingTime = NULL, CustomerId = @cid WHERE Id = @id";
+
+                command.Parameters.AddWithValue("@t", DateTime.Now);
+                command.Parameters.AddWithValue("@cid", customerId);
+                command.Parameters.AddWithValue("@id", ticketId);
+
+                command.ExecuteNonQuery();
+            }
+        }
+
+        public void ReturnSoldTicket(int ticketId)
+        {
+            using (var connection = OpenDbConnection())
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "UPDATE Tickets SET BookingTime = NULL, CustomerId = NULL WHERE Id = @id";
+
+                command.Parameters.AddWithValue("@id", ticketId);
+
+                command.ExecuteNonQuery();
+            }
+        }
+
         private Ticket ReadTicket(SqlDataReader reader, TrainTrip trip)
         {
             var res = new Ticket();
@@ -498,6 +606,88 @@ namespace RzdTicketsStore.Models
 
         #region Customers
 
+        public Customer GetCustomer(string userId)
+        {
+            using (var connection = OpenDbConnection())
+            {
+                var customer = FindCustomer(userId, connection);
+                if (customer == null)
+                    customer = CreateCustomer(userId, connection);
+
+                return customer;
+            }
+        }
+
+        private Customer FindCustomer(string userId, SqlConnection connection)
+        {
+            Customer res = null;
+
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = @"
+                    SELECT 
+                        c.Id          AS CustomerId,
+	                    c.UserId      AS CustomerUserId,
+	                    c.Surname     AS CustomerSurname,
+	                    c.Name        AS CustomerName,
+	                    c.Fathersname AS CustomerFathersname,
+	                    c.BirthDate   AS CustomerBirthdate
+                    FROM Customers c
+                    WHERE UserId = @userId";
+
+                command.Parameters.AddWithValue("userId", userId);
+
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        res = ReadCustomer(reader);
+                    }
+                }
+
+                return res;
+            }
+        }
+
+        private Customer CreateCustomer(string userId, SqlConnection connection)
+        {
+            Customer res = new Customer
+            {
+                UserId = userId,
+                Surname = "",
+                Name = "",
+                Fathersname = "",
+                BirthDate = DateTime.Now,
+                PassportNumber = ""
+            };
+
+            using (var command = connection.CreateCommand())
+            {
+
+                command.CommandText = @"
+                    INSERT INTO Customers(
+                        UserId,
+                        Surname,
+                        Name,
+                        Fathersname,
+                        BirthDate,
+                        PassportNumber)
+                    OUTPUT INSERTED.Id 
+                    VALUES(@uid, @s, @n, @f, @bd, @p)";
+
+                command.Parameters.AddWithValue("@uid", userId); 
+                command.Parameters.AddWithValue("@s", res.Surname); 
+                command.Parameters.AddWithValue("@n", res.Name); 
+                command.Parameters.AddWithValue("@f", res.Fathersname);
+                command.Parameters.AddWithValue("@bd", res.BirthDate);
+                command.Parameters.AddWithValue("@p", res.PassportNumber);
+
+                res.Id = (int)command.ExecuteScalar();
+            }
+
+            return res;
+        }
+
         private Customer ReadCustomer(SqlDataReader reader)
         {
             if (reader["CustomerId"] == DBNull.Value)
@@ -506,6 +696,7 @@ namespace RzdTicketsStore.Models
             Customer res = new Customer();
 
             res.Id = (int)reader["CustomerId"];
+            res.UserId = (string)reader["CustomerUserId"];
             res.Surname = (string)reader["CustomerSurname"];
             res.Name = (string)reader["CustomerName"];
             res.Fathersname = (string)reader["CustomerFathersname"];

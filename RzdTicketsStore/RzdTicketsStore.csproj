@@ -251,6 +251,10 @@
     <Content Include="Views\Trips\Create.cshtml" />
     <Content Include="Views\Trips\Edit.cshtml" />
     <Content Include="Views\Trips\Details.cshtml" />
+    <Content Include="Views\Tickets\Book.cshtml" />
+    <Content Include="Views\Tickets\Buy.cshtml" />
+    <Content Include="Views\Tickets\CancelBooking.cshtml" />
+    <Content Include="Views\Tickets\ReturnTicket.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
