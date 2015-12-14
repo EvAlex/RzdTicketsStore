@@ -9,6 +9,16 @@
 <h3>Время отправления: @Model.Trip.DepartureTime.ToString("HH:mm dd.MM.yyyy")</h3>
 <h3>Время прибытия: @Model.Trip.ArrivalTime.ToString("HH:mm dd.MM.yyyy")</h3>
 
+@if (!Request.IsAuthenticated)
+{
+    <div class="alert alert-warning" role="alert">
+        @Html.ActionLink("Зарегистрируйтесь", "Register", "Account", routeValues: null, htmlAttributes: new { id = "registerLink" })
+        или
+        @Html.ActionLink("войдите", "Login", "Account", routeValues: null, htmlAttributes: new { id = "loginLink" })
+        чтобы покупать или бронировать билеты
+    </div>
+}
+
 <div class="container">
     <div class="row">
         <div class="col-md-12">
@@ -28,12 +38,18 @@
                         <tr>
                             <td>@t.WagonNumber</td>
                             <td>@t.SeatNumber</td>
-                            <td>@t.Cost</td>
+                            <td>@t.Cost р.</td>
                             <td>
-
+                                @if (Request.IsAuthenticated)
+                                {
+                                    <a href="@Url.Action("Book", "Tickets", new { ticketId = t.Id })">Забронировать</a>
+                                }
                             </td>
                             <td>
-
+                                @if (Request.IsAuthenticated)
+                                {
+                                    <a href="@Url.Action("Buy", "Tickets", new { ticketId = t.Id })">Купить</a>
+                                }
                             </td>
                         </tr>
                     }

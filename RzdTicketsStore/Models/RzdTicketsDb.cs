@@ -19,6 +19,7 @@ namespace RzdTicketsStore.Models
 
         private void CreateDatabaseIfNotExists()
         {
+
             using (var connection = OpenMasterDbConnection())
             {
                 if (!CheckDbExists(GetDbName(), connection))
@@ -37,6 +38,10 @@ namespace RzdTicketsStore.Models
                 command.CommandText = "CREATE DATABASE " + GetDbName();
                 command.ExecuteNonQuery();
             }
+
+            var identityDb = new ApplicationDbContext();
+            identityDb.Database.CreateIfNotExists();
+            identityDb.Database.Initialize(true);
         }
 
         private bool CheckDbExists(string dbname, SqlConnection connection)

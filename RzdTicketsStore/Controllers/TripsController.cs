@@ -18,7 +18,7 @@ namespace RzdTicketsStore.Controllers
         }
 
         //  GET: Trips/5
-        [Route("Trips/{tripId}")]
+        [Route("Trips/{tripId:int}")]
         public ActionResult Details(int tripId)
         {
             var db = new RzdTicketsDb();
