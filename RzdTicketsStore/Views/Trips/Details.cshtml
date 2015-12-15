@@ -1,4 +1,5 @@
 ﻿@model RzdTicketsStore.Models.TripDetailsViewModel
+@using Microsoft.AspNet.Identity
 
 @{
     ViewBag.Title = "Details";
@@ -40,15 +41,23 @@
                             <td>@t.SeatNumber</td>
                             <td>@t.Cost р.</td>
                             <td>
-                                @if (Request.IsAuthenticated)
+                                @if (Request.IsAuthenticated && t.BookingTime == null && t.Passenger == null)
                                 {
-                                    <a href="@Url.Action("Book", "Tickets", new { ticketId = t.Id })">Забронировать</a>
+                                    <a href="@Url.Action("Book", "Tickets", new { ticketId = t.Id })" class="btn btn-default">Забронировать</a>
+                                }
+                                else if (t.BookingTime != null)
+                                {
+                                    <span class="label label-warning">Забронирован @(t.Passenger.UserId == User.Identity.GetUserId() ? "вами" : "")</span>
                                 }
                             </td>
                             <td>
-                                @if (Request.IsAuthenticated)
+                                @if (Request.IsAuthenticated && (t.BookingTime == null && t.Passenger == null || t.BookingTime != null && t.Passenger.UserId == User.Identity.GetUserId()))
                                 {
-                                    <a href="@Url.Action("Buy", "Tickets", new { ticketId = t.Id })">Купить</a>
+                                    <a href="@Url.Action("Buy", "Tickets", new { ticketId = t.Id })" class="btn btn-default">Купить</a>
+                                }
+                                else if (t.BookingTime == null && t.Passenger != null)
+                                {
+                                    <span class="label label-warning">Куплен @(t.Passenger.UserId == User.Identity.GetUserId() ? "вами" : "")</span>
                                 }
                             </td>
                         </tr>
